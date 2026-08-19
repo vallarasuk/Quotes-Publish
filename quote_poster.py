@@ -33,7 +33,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageStat
 
 WIDTH, HEIGHT = 1080, 1350
 POLLINATIONS_MODEL = "flux"
-BRAND_HANDLE = "@vallarasu_kanthasamy"
+BRAND_HANDLE = "@romantic.notes.for.you"
 
 def fetch_dynamic_quote() -> tuple[str, str]:
     # Fetch from a massive open-source database of 5000+ quotes
@@ -285,7 +285,7 @@ def build_poster(background_path: Path, quote: str, author: str, output_path: Pa
         
         # Post directly to Instagram
         if public_url:
-            caption = f"\"{quote}\"\n\nCurated by @vallarasu_kanthasamy 🤍\nFollow for daily romantic notes! ✨\n\n#lovequotes #romance #soulmate #quotes #aesthetic #lovers #romanticquotes #relationshipgoals #deepquotes"
+            caption = f"\"{quote}\"\n\nFollow @romantic.notes.for.you 🤍\nMaintained by @vallarasu_kanthasamy ✨\n\n#lovequotes #romance #soulmate #quotes #aesthetic #lovers #romanticquotes #relationshipgoals #deepquotes"
             post_to_instagram(public_url, caption)
                 
     except Exception as e:
