@@ -230,13 +230,15 @@ def build_poster(background_path: Path, quote: str, author: str, output_path: Pa
     # Great Vibes is a cursive font, so we make it significantly larger to be highly readable and elegant
     quote_font = font("quote", 104)
     author_font = font("author", 34)
+    maintainer_font = font("author", 26)
     
     # Calculate dimensions
     _, quote_height, _ = get_text_dimensions(temp_draw, quote, quote_font, max_width=920, spacing=24)
     
-    # The total block consists of: quote + gap(55) + line(3) + gap(28) + author
+    # The total block consists of: quote + gap(55) + line(3) + gap(28) + author + gap(15) + maintainer
     _, author_height, _ = get_text_dimensions(temp_draw, f"— {BRAND_HANDLE}", author_font, max_width=900, spacing=8)
-    total_height = quote_height + 55 + 3 + 28 + author_height
+    _, maintainer_height, _ = get_text_dimensions(temp_draw, "Maintained by @vallarasu_kanthasamy", maintainer_font, max_width=900, spacing=8)
+    total_height = quote_height + 55 + 3 + 28 + author_height + 15 + maintainer_height
     
     # Find best placement using raw image
     best_y = find_best_y_position(image, total_height)
@@ -264,12 +266,22 @@ def build_poster(background_path: Path, quote: str, author: str, output_path: Pa
         width=3,
     )
 
-    center_text(
+    actual_author_height = center_text(
         draw,
         f"— {BRAND_HANDLE}",
         author_font,
         y=separator_y + 28,
         fill=(255, 225, 220, 245),
+        max_width=900,
+        spacing=8,
+    )
+
+    center_text(
+        draw,
+        "Maintained by @vallarasu_kanthasamy",
+        maintainer_font,
+        y=separator_y + 28 + actual_author_height + 15,
+        fill=(255, 225, 220, 200),
         max_width=900,
         spacing=8,
     )
