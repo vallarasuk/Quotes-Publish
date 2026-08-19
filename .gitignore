@@ -1,0 +1,12 @@
+# Environment variables (CRITICAL TO IGNORE!)
+.env
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary Folders
+posters/
+fonts/
+.tempmediaStorage/
