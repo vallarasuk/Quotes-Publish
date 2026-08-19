@@ -274,7 +274,7 @@ def build_poster(background_path: Path, quote: str, author: str, output_path: Pa
         
         # Post directly to Instagram
         if public_url:
-            caption = f"\"{quote}\" \n\n{author} ✨\n\nCurated by @vallarasu_kanthasamy 🤍\n\n#love #romance #soulmate #quotes #aesthetic #lovers #romanticquotes"
+            caption = f"\"{quote}\"\n\nCurated by @vallarasu_kanthasamy 🤍\nFollow for daily romantic notes! ✨\n\n#lovequotes #romance #soulmate #quotes #aesthetic #lovers #romanticquotes #relationshipgoals #deepquotes"
             post_to_instagram(public_url, caption)
                 
     except Exception as e:
