@@ -25,7 +25,7 @@ from pathlib import Path
 from urllib.parse import quote as urlquote
 from dotenv import load_dotenv
 
-from uploader import upload_to_catbox
+from uploader import upload_image
 from instagram import post_to_instagram
 
 import requests
