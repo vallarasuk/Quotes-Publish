@@ -84,21 +84,32 @@ def fetch_dynamic_quote() -> tuple[str, str]:
 
 
 
-FONT_URLS = {
-    "quote": "https://raw.githubusercontent.com/google/fonts/main/ofl/greatvibes/GreatVibes-Regular.ttf",
-    "author": "https://raw.githubusercontent.com/google/fonts/main/ofl/crimsontext/CrimsonText-Italic.ttf",
+ROMANTIC_FONTS = {
+    "quote": [
+        "https://raw.githubusercontent.com/google/fonts/main/ofl/greatvibes/GreatVibes-Regular.ttf",
+        "https://raw.githubusercontent.com/google/fonts/main/ofl/pacifico/Pacifico-Regular.ttf",
+        "https://raw.githubusercontent.com/google/fonts/main/ofl/alexbrush/AlexBrush-Regular.ttf",
+        "https://raw.githubusercontent.com/google/fonts/main/ofl/sacramento/Sacramento-Regular.ttf",
+        "https://raw.githubusercontent.com/google/fonts/main/ofl/parisienne/Parisienne-Regular.ttf",
+        "https://raw.githubusercontent.com/google/fonts/main/ofl/cookie/Cookie-Regular.ttf",
+        "https://raw.githubusercontent.com/google/fonts/main/ofl/tangerine/Tangerine-Bold.ttf"
+    ],
+    "author": ["https://raw.githubusercontent.com/google/fonts/main/ofl/crimsontext/CrimsonText-Italic.ttf"]
 }
 
 
 def font(kind: str, size: int):
     font_dir = Path("fonts")
     font_dir.mkdir(exist_ok=True)
-    font_path = font_dir / f"CrimsonText-{kind.title()}.ttf"
+    
+    font_url = random.choice(ROMANTIC_FONTS[kind])
+    font_filename = font_url.split("/")[-1]
+    font_path = font_dir / font_filename
     
     if not font_path.exists():
-        print(f"Downloading attractive {kind} font...")
+        print(f"Downloading attractive {kind} font ({font_filename})...")
         try:
-            response = requests.get(FONT_URLS[kind], timeout=60)
+            response = requests.get(font_url, timeout=60)
             response.raise_for_status()
             font_path.write_bytes(response.content)
         except Exception as e:
@@ -266,9 +277,9 @@ def build_poster(background_path: Path, quote: str, author: str, output_path: Pa
     image.convert("RGB").save(output_path, "PNG", optimize=True)
     print(f"Saved locally: {output_path}")
 
-    # Upload to Catbox for Meta compatibility
+    # Upload to Meta compatibility layer
     try:
-        from uploader import upload_image # Make sure to use the new module name from the file!
+        from uploader import upload_image 
         public_url = upload_image(output_path)
         print(f"Public HTTPS URL for Meta API: {public_url}")
         
