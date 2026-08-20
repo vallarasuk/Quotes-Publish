@@ -47,8 +47,10 @@ def fetch_dynamic_quote() -> tuple[str, str]:
         # Keywords that strongly indicate deep, personal romantic/relationship love
         keywords = ["romantic", "soulmate", "my love", "i love you", "kiss", "lovers", "in love", "true love", "together forever", "my heart", "your smile", "your eyes", "only you", "love of my life", "my whole world", "you are my everything", "you complete me", "in your arms", "forever with you", "holding you"]
         
-        # Words that indicate generic motivation, friendship, or broad philosophy (exclude these)
-        blocklist = ["work", "business", "success", "fail", "win", "lose", "money", "career", "motivate", "enemy", "war", "friend", "society", "philosophy", "human", "mankind", "god", "religion", "politics", "spirituality", "animals", "science", "nature", "universe"]
+        # Words that indicate generic motivation, complex/archaic English, or broad philosophy (exclude these)
+        blocklist = ["work", "business", "success", "fail", "win", "lose", "money", "career", "motivate", "enemy", "war", "friend", "society", "philosophy", "human", "mankind", "god", "religion", "politics", "spirituality", "animals", "science", "nature", "universe", "vanquish", "sectarianism", "banality", "eternity", "thou", "thy", "thee", "hath", "doth", "alas", "virtue", "sorrow", "abyss", "divine", "mortal", "immortal", "endeavor", "bestow"]
+        
+        import re
         
         romantic_quotes = []
         for q in all_quotes:
@@ -58,7 +60,12 @@ def fetch_dynamic_quote() -> tuple[str, str]:
                 continue
                 
             text_lower = text.lower()
-            if any(kw in text_lower for kw in keywords) and not any(bw in text_lower for bw in blocklist):
+            
+            # Extract pure words without punctuation for strict blocklist checking
+            words_in_text = set(re.findall(r'\b\w+\b', text_lower))
+            
+            # Keywords can remain substring matches, but blocklist must be exact words
+            if any(kw in text_lower for kw in keywords) and not any(bw in words_in_text for bw in blocklist):
                 romantic_quotes.append(q)
                 
         # Load previously used quotes to ensure we never repeat!
