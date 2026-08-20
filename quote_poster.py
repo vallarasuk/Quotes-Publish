@@ -44,16 +44,21 @@ def fetch_dynamic_quote() -> tuple[str, str]:
         response.raise_for_status()
         all_quotes = response.json()
         
-        # Keywords that strongly indicate romantic/relationship love
-        keywords = ["romantic", "soulmate", "my love", "i love you", "kiss", "lovers", "in love", "true love", "together forever", "my heart", " love ", " romance ", " marriage "]
+        # Keywords that strongly indicate deep, personal romantic/relationship love
+        keywords = ["romantic", "soulmate", "my love", "i love you", "kiss", "lovers", "in love", "true love", "together forever", "my heart", "your smile", "your eyes", "only you", "love of my life", "my whole world", "you are my everything", "you complete me", "in your arms", "forever with you", "holding you"]
         
-        # Words that indicate generic motivation or business (we want to exclude these)
-        blocklist = ["work", "business", "success", "fail", "win", "lose", "money", "career", "motivate", "enemy", "war"]
+        # Words that indicate generic motivation, friendship, or broad philosophy (exclude these)
+        blocklist = ["work", "business", "success", "fail", "win", "lose", "money", "career", "motivate", "enemy", "war", "friend", "society", "philosophy", "human", "mankind", "god", "religion", "politics", "spirituality", "animals", "science", "nature", "universe"]
         
         romantic_quotes = []
         for q in all_quotes:
-            text = q.get("quoteText", "").lower()
-            if any(kw in text for kw in keywords) and not any(bw in text for bw in blocklist):
+            text = q.get("quoteText", "")
+            # Skip quotes that are too long (e.g. > 100 chars) so they fit perfectly in the image
+            if len(text) > 100:
+                continue
+                
+            text_lower = text.lower()
+            if any(kw in text_lower for kw in keywords) and not any(bw in text_lower for bw in blocklist):
                 romantic_quotes.append(q)
                 
         # Load previously used quotes to ensure we never repeat!
