@@ -27,9 +27,9 @@ def publish_media(creation_id: str, ig_user_id: str, access_token: str) -> str:
     except Exception:
         return f"https://instagram.com/"
 
-def post_to_instagram(image_url: str, caption: str) -> str:
+def post_to_instagram(media_url: str, caption: str) -> str:
     """
-    Posts an image URL to Instagram using the Meta Graph API.
+    Posts an image or video URL to Instagram using the Meta Graph API.
     Requires IG_USER_ID and IG_ACCESS_TOKEN environment variables.
     """
     ig_user_id = os.environ.get("IG_USER_ID")
@@ -42,10 +42,16 @@ def post_to_instagram(image_url: str, caption: str) -> str:
     # Step 1: Create Media Container
     container_url = f"https://graph.facebook.com/v20.0/{ig_user_id}/media"
     container_payload = {
-        "image_url": image_url,
         "caption": caption,
         "access_token": access_token
     }
+    
+    is_video = media_url.endswith(".mp4")
+    if is_video:
+        container_payload["media_type"] = "REELS"
+        container_payload["video_url"] = media_url
+    else:
+        container_payload["image_url"] = media_url
     
     print("Creating Instagram media container...")
     container_res = requests.post(container_url, data=container_payload)
@@ -59,8 +65,7 @@ def post_to_instagram(image_url: str, caption: str) -> str:
         return None
         
     print(f"Media container created (ID: {creation_id}). Waiting for Meta to process...")
-    # Wait a few seconds for Meta's servers to process the image URL
-    time.sleep(5)
-    
+    # Wait a few seconds for Meta's servers to process the image/video URL
+    time.sleep(20 if is_video else 5)
     # Step 2: Publish the Container
     return publish_media(creation_id, ig_user_id, access_token)

@@ -308,19 +308,37 @@ def build_poster(background_path: Path, quote: str, author: str, output_path: Pa
     image.convert("RGB").save(output_path, "PNG", optimize=True)
     print(f"Saved locally: {output_path}")
 
-    # Upload to Meta compatibility layer
-    try:
-        from uploader import upload_image 
-        public_url = upload_image(output_path)
-        print(f"Public HTTPS URL for Meta API: {public_url}")
+
+
+def send_to_telegram(file_path: Path, caption_text: str):
+    print("Sending to Telegram...")
+    TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+    
+    if not TOKEN or not CHAT_ID:
+        print("Warning: Telegram bot token or chat ID not found in .env file.")
+        return
+    
+    # Wrap caption in HTML code tags for 1-tap copy in Telegram
+    telegram_caption = f"<code>{caption_text}</code>"
+    
+    is_video = str(file_path).endswith(".mp4")
+    endpoint = "sendVideo" if is_video else "sendPhoto"
+    url = f"https://api.telegram.org/bot{TOKEN}/{endpoint}"
+    
+    with open(file_path, "rb") as f:
+        files = {"video": f} if is_video else {"photo": f}
+        data = {
+            "chat_id": CHAT_ID,
+            "caption": telegram_caption,
+            "parse_mode": "HTML"
+        }
         
-        # Post directly to Instagram
-        if public_url:
-            caption = f"\"{quote}\"\n\nFollow @romantic.notes.for.you 🤍\nMaintained by @vallarasu_kanthasamy ✨\n\n#lovequotes #romance #soulmate #quotes #aesthetic #lovers #romanticquotes #relationshipgoals #deepquotes"
-            post_to_instagram(public_url, caption)
-                
-    except Exception as e:
-        print(f"Warning: Failed to upload or post to Instagram. ({e})")
+        res = requests.post(url, files=files, data=data)
+        if res.status_code == 200:
+            print("Successfully sent to Telegram! Check your phone.")
+        else:
+            print(f"Failed to send to Telegram: {res.text}")
 
 
 def main():
@@ -390,7 +408,10 @@ def main():
         
         print("Building poster...")
         build_poster(background, quote, author, final_output)
-
+        
+        # Send directly to your phone via Telegram!
+        caption = f"\"{quote}\"\n\nFollow @romantic.notes.for.you 🤍\nMaintained by @vallarasu_kanthasamy ✨\n\n#lovequotes #romance #soulmate #quotes #aesthetic #lovers #romanticquotes #relationshipgoals #deepquotes"
+        send_to_telegram(final_output, caption)
 
 if __name__ == "__main__":
     main()
