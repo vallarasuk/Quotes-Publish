@@ -45,7 +45,7 @@ def fetch_dynamic_quote() -> tuple[str, str]:
         all_quotes = response.json()
         
         # Keywords that strongly indicate deep, personal romantic/relationship love
-        keywords = ["romantic", "soulmate", "my love", "i love you", "kiss", "lovers", "in love", "true love", "together forever", "my heart", "your smile", "your eyes", "only you", "love of my life", "my whole world", "you are my everything", "you complete me", "in your arms", "forever with you", "holding you"]
+        keywords = ["romantic", "soulmate", "my love", "i love you", "kiss", "lovers", "in love", "true love", "together forever", "my heart", "your smile", "your eyes", "only you", "love of my life", "my whole world", "you are my everything", "you complete me", "in your arms", "forever with you", "holding you", "love", "romance"]
         
         # Words that indicate generic motivation, complex/archaic English, or broad philosophy (exclude these)
         blocklist = ["work", "business", "success", "fail", "win", "lose", "money", "career", "motivate", "enemy", "war", "friend", "society", "philosophy", "human", "mankind", "god", "religion", "politics", "spirituality", "animals", "science", "nature", "universe", "vanquish", "sectarianism", "banality", "eternity", "thou", "thy", "thee", "hath", "doth", "alas", "virtue", "sorrow", "abyss", "divine", "mortal", "immortal", "endeavor", "bestow"]
@@ -76,6 +76,12 @@ def fetch_dynamic_quote() -> tuple[str, str]:
             
         # Filter out already used quotes
         fresh_quotes = [q for q in romantic_quotes if q.get("quoteText", "") not in used_quotes]
+        
+        # If we exhausted all fresh quotes, reset the used quotes list
+        if not fresh_quotes and romantic_quotes:
+            if used_quotes_file.exists():
+                used_quotes_file.unlink()
+            fresh_quotes = romantic_quotes
         
         if fresh_quotes:
             chosen = random.choice(fresh_quotes)
@@ -247,11 +253,9 @@ def build_poster(background_path: Path, quote: str, author: str, output_path: Pa
     # Calculate dimensions
     _, quote_height, _ = get_text_dimensions(temp_draw, quote, quote_font, max_width=920, spacing=24)
     
-    # The total block consists of: quote + gap(55) + line(3) + gap(28) + author + gap(15) + maintainer
+    # The total block consists of: quote + gap(55) + line(3) + gap(28) + author
     _, author_height, _ = get_text_dimensions(temp_draw, f"— {BRAND_HANDLE}", author_font, max_width=900, spacing=8)
-    _, maintainer_height, _ = get_text_dimensions(temp_draw, "Maintained by @vallarasu_kanthasamy", maintainer_font, max_width=900, spacing=8)
-    total_height = quote_height + 55 + 3 + 28 + author_height + 15 + maintainer_height
-    
+    total_height = quote_height + 55 + 3 + 28 + author_height    
     # Find best placement using raw image
     best_y = find_best_y_position(image, total_height)
 
@@ -288,14 +292,17 @@ def build_poster(background_path: Path, quote: str, author: str, output_path: Pa
         spacing=8,
     )
 
-    center_text(
-        draw,
-        "Maintained by @vallarasu_kanthasamy",
-        maintainer_font,
-        y=separator_y + 28 + actual_author_height + 15,
+    maintainer_text = "Maintained by @vallarasu_kanthasamy"
+    bbox = draw.textbbox((0, 0), maintainer_text, font=maintainer_font)
+    maintainer_w = bbox[2] - bbox[0]
+    maintainer_h = bbox[3] - bbox[1]
+    margin_x, margin_y = 40, 40
+    
+    draw.text(
+        (WIDTH - maintainer_w - margin_x, HEIGHT - maintainer_h - margin_y),
+        maintainer_text,
+        font=maintainer_font,
         fill=(255, 225, 220, 200),
-        max_width=900,
-        spacing=8,
     )
 
     image.convert("RGB").save(output_path, "PNG", optimize=True)
