@@ -27,6 +27,7 @@ from dotenv import load_dotenv
 
 from uploader import upload_image
 from instagram import post_to_instagram
+from telegram_approver import ask_pre_generation_setup, ask_telegram_approval  # type: ignore
 
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageStat
@@ -116,11 +117,15 @@ ROMANTIC_FONTS = {
 }
 
 
-def font(kind: str, size: int):
+def font(kind: str, size: int, specific_font_url: str = None):
     font_dir = Path("fonts")
     font_dir.mkdir(exist_ok=True)
     
-    font_url = random.choice(ROMANTIC_FONTS[kind])
+    if specific_font_url and kind == "quote":
+        font_url = specific_font_url
+    else:
+        font_url = random.choice(ROMANTIC_FONTS[kind])
+        
     font_filename = font_url.split("/")[-1]
     font_path = font_dir / font_filename
     
@@ -240,13 +245,13 @@ def center_text(draw, text, chosen_font, y, fill, max_width, spacing=16):
     return box[3] - box[1]
 
 
-def build_poster(background_path: Path, quote: str, author: str, output_path: Path) -> None:
+def build_poster(background_path: Path, quote: str, author: str, caption: str, output_path: Path, specific_font_url: str = None, specific_music_path: Path = None) -> None:
     image = Image.open(background_path).convert("RGBA").resize((WIDTH, HEIGHT))
 
     # Temporarily create a draw object for measurement
     temp_draw = ImageDraw.Draw(image)
     # Great Vibes is a cursive font, so we make it significantly larger to be highly readable and elegant
-    quote_font = font("quote", 104)
+    quote_font = font("quote", 104, specific_font_url)
     author_font = font("author", 34)
     maintainer_font = font("author", 26)
     
@@ -305,19 +310,31 @@ def build_poster(background_path: Path, quote: str, author: str, output_path: Pa
         fill=(255, 225, 220, 200),
     )
 
-    image.convert("RGB").save(output_path, "PNG", optimize=True)
-    print(f"Saved locally: {output_path}")
+    image_path = output_path.with_suffix(".png")
+    image.convert("RGB").save(image_path, "PNG", optimize=True)
+    print(f"Saved locally: {image_path}")
+
+    final_asset = image_path
+    
+    if specific_music_path:
+        from video_builder import create_video_from_image
+        video_path = output_path.with_suffix(".mp4")
+        create_video_from_image(image_path, specific_music_path, video_path)
+        final_asset = video_path
 
     # Upload to Meta compatibility layer
     try:
         from uploader import upload_image 
-        public_url = upload_image(output_path)
+        public_url = upload_image(final_asset)
         print(f"Public HTTPS URL for Meta API: {public_url}")
         
         # Post directly to Instagram
         if public_url:
-            caption = f"\"{quote}\"\n\nFollow @romantic.notes.for.you 🤍\nMaintained by @vallarasu_kanthasamy ✨\n\n#lovequotes #romance #soulmate #quotes #aesthetic #lovers #romanticquotes #relationshipgoals #deepquotes"
-            post_to_instagram(public_url, caption)
+            approved, final_caption = ask_telegram_approval(public_url, caption)
+            if approved:
+                post_to_instagram(public_url, final_caption)
+            else:
+                print("Skipped Instagram post because it was rejected on Telegram.")
                 
     except Exception as e:
         print(f"Warning: Failed to upload or post to Instagram. ({e})")
@@ -342,6 +359,19 @@ def main():
         author = args.author or "Unknown"
     else:
         quote, author = fetch_dynamic_quote()
+        
+    default_caption = f"\"{quote}\"\n\nFollow @romantic.notes.for.you 🤍\nMaintained by @vallarasu_kanthasamy ✨\n\n#lovequotes #romance #soulmate #quotes #aesthetic #lovers #romanticquotes #relationshipgoals #deepquotes"
+    
+    available_music = list(Path("music").glob("*.mp3"))
+    
+    approved, quote, author, caption, specific_font_url, specific_music_path = ask_pre_generation_setup(
+        quote, author, default_caption, ROMANTIC_FONTS["quote"], available_music
+    )
+    
+    if not approved:
+        print("Generation cancelled via Telegram. Exiting.")
+        import sys
+        sys.exit(0)
         
     if args.theme:
         theme = args.theme
@@ -389,7 +419,7 @@ def main():
         generate_background(theme, api_key, background)
         
         print("Building poster...")
-        build_poster(background, quote, author, final_output)
+        build_poster(background, quote, author, caption, final_output, specific_font_url, specific_music_path)
 
 
 if __name__ == "__main__":

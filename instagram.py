@@ -41,13 +41,20 @@ def post_to_instagram(image_url: str, caption: str) -> str:
 
     # Step 1: Create Media Container
     container_url = f"https://graph.facebook.com/v20.0/{ig_user_id}/media"
+    is_video = image_url.lower().endswith(".mp4")
+    
     container_payload = {
-        "image_url": image_url,
         "caption": caption,
         "access_token": access_token
     }
     
-    print("Creating Instagram media container...")
+    if is_video:
+        container_payload["media_type"] = "REELS"
+        container_payload["video_url"] = image_url
+    else:
+        container_payload["image_url"] = image_url
+    
+    print(f"Creating Instagram media container ({'Video/Reel' if is_video else 'Image'})...")
     container_res = requests.post(container_url, data=container_payload)
     if container_res.status_code != 200:
         print(f"Error creating container: {container_res.text}")
@@ -59,8 +66,26 @@ def post_to_instagram(image_url: str, caption: str) -> str:
         return None
         
     print(f"Media container created (ID: {creation_id}). Waiting for Meta to process...")
-    # Wait a few seconds for Meta's servers to process the image URL
-    time.sleep(5)
+    
+    if is_video:
+        status_url = f"https://graph.facebook.com/v20.0/{creation_id}?fields=status_code&access_token={access_token}"
+        for _ in range(24): # 2 minutes max
+            time.sleep(5)
+            try:
+                s_res = requests.get(status_url, timeout=10).json()
+                status = s_res.get("status_code")
+                if status == "FINISHED":
+                    print("Video processing finished!")
+                    break
+                elif status == "ERROR":
+                    print("Meta API returned ERROR during video processing.")
+                    return None
+                else:
+                    print(f"Status: {status}... waiting.")
+            except Exception:
+                pass
+    else:
+        time.sleep(5)
     
     # Step 2: Publish the Container
     return publish_media(creation_id, ig_user_id, access_token)
